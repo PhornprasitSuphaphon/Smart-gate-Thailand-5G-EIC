@@ -1,0 +1,22 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+bidict = "*"
+click = "*"
+itsdangerous = "*"
+numpy = "*"
+python-engineio = "*"
+python-socketio = "*"
+opencv-python-headless = "*"
+tensorflow = "*"
+imutils = "*"
+Flask = "*"
+Flask-SocketIO = "*"
+Jinja2 = "*"
+MarkupSafe = "*"
+Werkzeug = "*"
+
+[dev-packages]

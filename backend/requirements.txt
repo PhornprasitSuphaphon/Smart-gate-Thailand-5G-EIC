@@ -1,0 +1,11 @@
+Flask
+Flask-SocketIO
+itsdangerous
+Jinja2
+numpy
+python-socketio
+opencv-python-headless
+tensorflow
+imutils
+pytz
+PyMySQL

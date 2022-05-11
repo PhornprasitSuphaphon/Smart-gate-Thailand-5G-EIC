@@ -1,0 +1,35 @@
+version: '3'
+
+networks:
+  web_network:
+    name: flaskapi
+    driver: bridge
+
+services:
+  api :
+    container_name: server-smartgate
+    image: image-server-smartgate:1.0
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - "./backend:/code"
+    environment:
+      FLASK_ENV: development
+      FLASK_DEBUG: 1
+      FLASK_APP: app.py
+    restart: always
+    networks:
+      - web_network
+
+  client :
+    container_name: client-smartgate
+    image: image-client-smartgate:1.0
+    build: ./forntend
+    ports:
+      - "3000:80"
+    restart: always
+    networks:
+      - web_network
+
+

@@ -14,6 +14,7 @@ import time
 import cv2
 import os
 import json
+import queue
 
 from config import *
 import base64
@@ -27,7 +28,30 @@ app=Flask(__name__)
 app.config['SECRET_KEY'] = 'mysecret'
 app.config['JSON_AS_ASCII'] = False
 socketIo = SocketIO(app, cors_allowed_origins="*")
-# socketIo = SocketIO(app)
+
+class VideoCapture:
+	def __init__(self, name):
+		self.cap = cv2.VideoCapture(name)
+		self.q = queue.Queue()
+		t = threading.Thread(target=self._reader)
+		t.daemon = True
+		t.start()
+
+  # read frames as soon as they are available, keeping only most recent one
+	def _reader(self):
+		while True:
+			ret, frame = self.cap.read()
+			if not ret:
+				break
+			if not self.q.empty():
+				try:
+					self.q.get_nowait()   # discard previous (unprocessed) frame
+				except queue.Empty:
+					pass
+			self.q.put(frame)
+
+	def read(self):
+		return self.q.get()
 
 def generate_frames():
 	#region main face detec
@@ -41,8 +65,9 @@ def generate_frames():
 	data = None
 	
 	# RTSP_URL = 'rtsp://admin:T0UCHics@161.82.233.182:14432/LiveMedia/ch1/Media1'
-	# RTSP_URL = 'http://192.168.11.110:8080/video'
-	vs = VideoStream(src=1).start()
+	RTSP_URL = 'rtsp://admin:T0UCHics@161.82.233.182:14432/LiveMedia/ch1/Media1'
+	# vs = VideoStream(src=1).start()
+	vs = VideoCapture(RTSP_URL)
 	# Load our serialized face detector model from disk
 	prototxtPath = os.path.join(os.getcwd(),'models','deploy.prototxt')
 	weightsPath = os.path.join(os.getcwd(),'models','res10_300x300_ssd_iter_140000.caffemodel')
@@ -59,14 +84,16 @@ def generate_frames():
 		
 		if frame is None:
 			#streaming image Camera-not-working
-			image = cv2.imread('no-came.png')
-			width, height = image.shape[1],image.shape[0]
-			crop_image = center_crop(image, (height,width))
-			frameImg = cv2.imencode('.jpg', crop_image)[1].tobytes()
-			yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frameImg + b'\r\n')
-
-			vs = VideoStream(src=RTSP_URL).start()	
-			# print("Can't receive frame (stream end?). Exiting ...")
+			# image = cv2.imread('no-came.png')
+			# width, height = image.shape[1],image.shape[0]
+			# crop_image = center_crop(image, (height,width))
+			# frameImg = cv2.imencode('.jpg', crop_image)[1].tobytes()
+			# yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frameImg + b'\r\n')
+			# vs = VideoCapture(RTSP_URL)
+			
+			print("Can't receive frame (stream end?). Exiting ...")
+			vs = VideoCapture(RTSP_URL)
+			continue
 			# time.sleep(2)
 
 		else :
@@ -196,4 +223,5 @@ if __name__=="__main__":
 	vs=None
 	threading.Thread(target=thread_db, daemon=True).start()
 	socketIo.run(app,host="0.0.0.0", port=8000,debug=True)
+	# socketIo.run(app,host="0.0.0.0")
 	
